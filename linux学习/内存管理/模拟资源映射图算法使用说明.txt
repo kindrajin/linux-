@@ -1,0 +1,76 @@
+内存管理之资源映射图
+1，简介
+资源映射图是一个简单的内存管理系统，采用空闲链表来管理空闲内存，根据空闲链表节点的存放位置，
+资源映射图大致有两种实现方式，一种是空闲链表单独存放，另一种是空闲链表节点存放在每个空闲内存块的
+头部。第一种方式链表的每个节点需要存放（base,size，next)数据，即内存块的基地址，大小和指向下一个节点的指针，第二种方式只需在空闲内存块的头部存放（size,next)即可。
+随着内存分配和释放次数的增加，空闲链表也需要动态变化，如果空闲链表单独存放，那么它需要另一个分配器来为它分配内存，该确定可通过第二种方法来改进。
+资源映射图的优缺点如下：
+优点：实现简单，释放内存时可部分释放
+缺点：资源映射图法最大的缺点是：分配时间长，每次寻找一个合适的空闲内存块都需要遍历链表；容易产生大量内存碎块；将小内存块合并起来非常费时，需要遍历整个空闲链表来找到连续的空闲内存。因此资源映射图法注定不能成为操作系统的主内存分配器，子能用在其子系统上。
+-----------
+| free    |
+|         |
+-----------      空闲链表
+|  used   |      （base,size)——>（base,size)——>(base,size)——>...
+-----------  
+|  free   |
+-----------
+|         |
+|  free   |
+|         |
+-----------
+|  used   |
+-----------
+2,模拟资源映射图法代码使用说明
+模拟资源映射图算法，采用空闲链表单独存放方式，主要可以看看资源映射图对内存的利用情况，在代码中当最终不能找的合适的空闲内存块来分配时，程序会打印出此时的内存浪费率，内存浪费率定义为：unused/total，通过该指标我们可以看到有多少内存变成了碎块而不能满足分配要求。为了模拟真实情况，在分配的同时也会随机释放已分配的内存。
+以下为运行情况：
+------------
+jindizhao@jindizhao-Latitude-D520 ~/linux学习/内存管理 $ ./source_map_allocator 
+输入需要分配的n个内存块大小(大小<=50)，以空格分割开，单位为unsigned int
+按enter键执行分配，在分配过程中会随机释放内存，按Ctr+d 结束测试
+4
+allocate: start 0x883f028，end 0x883f038, size 4
+12
+allocate: start 0x883f038，end 0x883f068, size 12
+free：start 0x883f028, end 0x883f030, size 2
+-------------
+上述显示表示第一次分配4个unsigned int大小的内存，分配到的内存起始地址为0x883f028,结束地址为
+0x883f038
+后面的free 表示释放的内存，大小为2，起始地址和终止地址为0x883f028,0x883f030。释放已经分配的部分内存。
+-----------
+jindizhao@jindizhao-Latitude-D520 ~/linux学习/内存管理 $ ./source_map_allocator 
+输入需要分配的n个内存块大小(大小<=50)，以空格分割开，单位为unsigned int
+按enter键执行分配，在分配过程中会随机释放内存，按Ctr+d 结束测试
+4
+allocate: start 0x883f028，end 0x883f038, size 4
+12
+allocate: start 0x883f038，end 0x883f068, size 12
+free：start 0x883f028, end 0x883f030, size 2
+12 40 30 4
+allocate: start 0x883f068，end 0x883f098, size 12
+allocate: start 0x883f098，end 0x883f138, size 40
+free：start 0x883f068, end 0x883f088, size 8
+allocate: start 0x883f138，end 0x883f1b0, size 30
+free：start 0x883f098, end 0x883f0e0, size 18
+free：start 0x883f038, end 0x883f040, size 2
+free：start 0x883f030, end 0x883f034, size 1
+allocate: start 0x883f098，end 0x883f0a8, size 4
+free：start 0x883f088, end 0x883f094, size 3
+free：start 0x883f040, end 0x883f060, size 8
+free：start 0x883f034, end 0x883f038, size 1
+free：start 0x883f030, end 0x883f034, size 1
+free：start 0x883f038, end 0x883f040, size 2
+2 24 14
+allocate: start 0x883f040，end 0x883f048, size 2
+free：start 0x883f0e0, end 0x883f134, size 21
+分配失败！
+剩余内存块数：10, 剩余内存大小：60
+, 浪费率0.600000
+free：start 0x883f098, end 0x883f0a0, size 2
+allocate: start 0x883f0e0，end 0x883f118, size 14
+free：start 0x883f094, end 0x883f098, size 1
+free：start 0x883f098, end 0x883f0a0, size 2
+free：start 0x883f048, end 0x883f04c, size 1
+free：start 0x883f068, end 0x883f088, size 8
+—-------------------------------------
+上述显示在分配大小为24的内存中出现失败，即找不到合适的空闲内存块，我们可以看到此时空闲链表中剩余的空闲内存块数有10块，总大小60，但是没有>=20的空闲内存块，内存浪费率为60%。
