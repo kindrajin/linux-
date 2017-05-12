@@ -1,6 +1,6 @@
 /*******************************************************************************
  * Created Time:    2017-05-10 09:42:08
- * Modified Time:   2017-05-10 20:04:54
+ * Modified Time:   2017-05-12 17:31:24
  * Function：该程序模拟资源映射图分配内存使用空闲链表保存未分配的内存模块，采用最先匹配算法
  *       通过该程序可以看出资源映射图分配内存时会产生大量的内存碎片，内存浪费率很高！
  * Author：JIN dizhao
@@ -78,10 +78,15 @@ int main(int argc, char *argv[])
     free_mem_list_init(free_memory_list);
 
     //模拟内存分配和释放过程
-    printf("输入需要分配的n个内存块大小(大小<=50)，以空格分割开，单位为unsigned int\n按enter键执行分配，在分配过程中会随机释放内存，按Ctr+d 结束测试\n");
+    printf("输入需要分配的内存块大小(大小<=50)，以空格分割开，单位为4Bytes,按enter键执行，在分配过程中会随机释放内存，按Ctr+d 结束测试\n");
     while(scanf("%d",&input_size) != EOF) 
     {
         unsigned int *p;
+        if(input_size > 50)
+        {
+            printf("error:请求内存需 <= 50\n");
+            continue;
+        }
         p = alloc_mem_firstmatch(free_memory_list, allocated_memory_list,input_size);
         if(p == NULL)
         {
